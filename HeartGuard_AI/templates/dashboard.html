@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — HeartGuard AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫀</text></svg>">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🫀</span>
+                <span>HeartGuard AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/logout" class="nav-user">👤 {{ current_user.name }} · Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="dashboard-container">
+                <!-- Welcome Header -->
+                <div class="form-header fade-in">
+                    <h1>Welcome, <span class="gradient-text">{{ current_user.name }}</span></h1>
+                    <p>Your prediction history and health insights</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} fade-in">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <!-- Quick Stats -->
+                <div class="metrics-grid fade-in fade-in-delay-1" style="margin-bottom: 2rem;">
+                    <div class="metric-card">
+                        <div class="metric-value accuracy">{{ predictions|length }}</div>
+                        <div class="metric-label">Total Predictions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value recall">
+                            {{ predictions|selectattr('prediction', 'equalto', 1)|list|length }}
+                        </div>
+                        <div class="metric-label">High Risk Results</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value f1">
+                            {{ predictions|selectattr('prediction', 'equalto', 0)|list|length }}
+                        </div>
+                        <div class="metric-label">Low Risk Results</div>
+                    </div>
+                </div>
+
+                <!-- New Prediction CTA -->
+                <div style="text-align: center; margin-bottom: 2rem;" class="fade-in fade-in-delay-2">
+                    <a href="/predict" class="btn btn-primary btn-lg">
+                        🔬 New Prediction
+                    </a>
+                </div>
+
+                <!-- Prediction History -->
+                <div class="card fade-in fade-in-delay-3" style="overflow-x: auto;">
+                    <h3 style="margin-bottom: 1.25rem;">📋 Prediction History</h3>
+
+                    {% if predictions|length == 0 %}
+                    <div style="text-align: center; padding: 3rem 1rem;">
+                        <p style="font-size: 3rem; margin-bottom: 1rem;">🔬</p>
+                        <p style="color: var(--text-secondary); font-size: 1.1rem;">No predictions yet.</p>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Make your first heart disease risk assessment!</p>
+                        <a href="/predict" class="btn btn-primary">Start Prediction</a>
+                    </div>
+                    {% else %}
+                    <table class="contributions-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date & Time</th>
+                                <th>Result</th>
+                                <th>Prediction Margin</th>
+                                <th>Disease Prob.</th>
+                                <th>Age</th>
+                                <th>BP</th>
+                                <th>Chol</th>
+                                <th>Max HR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in predictions %}
+                            <tr>
+                                <td style="color: var(--text-muted);">{{ loop.index }}</td>
+                                <td style="font-size: 0.85rem;">
+                                    {{ p.created_at.strftime('%b %d, %Y') }}<br>
+                                    <span style="color: var(--text-muted);">{{ p.created_at.strftime('%I:%M %p') }}</span>
+                                </td>
+                                <td>
+                                    {% if p.prediction == 1 %}
+                                    <span class="impact-tag increases">⚠️ High Risk</span>
+                                    {% else %}
+                                    <span class="impact-tag decreases">✅ Low Risk</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">
+                                        {{ p.confidence }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="font-family: 'JetBrains Mono', monospace; color: {{ '#fca5a5' if p.probability_disease > 50 else '#6ee7b7' }};">
+                                        {{ p.probability_disease }}%
+                                    </span>
+                                </td>
+                                <td>{{ p.age|int }}</td>
+                                <td>{{ p.trestbps|int }}</td>
+                                <td>{{ p.chol|int }}</td>
+                                <td>{{ p.thalach|int }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p>⚕️ HeartGuard AI — For educational purposes only. Always consult a healthcare professional.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

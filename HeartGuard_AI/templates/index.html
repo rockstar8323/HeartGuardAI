@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeartGuard AI — Intelligent Heart Disease Prediction</title>
+    <meta name="description" content="AI-powered heart disease risk assessment using machine learning and explainable AI.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫀</text></svg>">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🫀</span>
+                <span>HeartGuard AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                {% if current_user.is_authenticated %}
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/logout" class="nav-user">👤 {{ current_user.name }} · Logout</a></li>
+                {% else %}
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup" class="nav-cta">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} fade-in" style="max-width: 600px; margin: 1rem auto;">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <section class="hero">
+                <div class="hero-badge">
+                    <span class="dot"></span>
+                    ML-Powered Prediction Engine
+                </div>
+                <h1>
+                    Predict Heart Disease<br>
+                    <span class="gradient-text">With AI Precision</span>
+                </h1>
+                <p>
+                    Advanced machine learning model trained on clinical data, combined with
+                    SHAP explainable AI to help you understand every prediction — not just the result,
+                    but the <strong>why</strong> behind it.
+                </p>
+                <div class="hero-actions">
+                    {% if current_user.is_authenticated %}
+                    <a href="/predict" class="btn btn-primary btn-lg">🔬 Start Prediction</a>
+                    <a href="/dashboard" class="btn btn-secondary btn-lg">📊 My Dashboard</a>
+                    {% else %}
+                    <a href="/signup" class="btn btn-primary btn-lg">🚀 Get Started Free</a>
+                    <a href="/model-performance" class="btn btn-secondary btn-lg">📊 View Model Metrics</a>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="features">
+                <div class="section-header">
+                    <h2>Why <span class="gradient-text">HeartGuard AI</span>?</h2>
+                    <p>Built on science. Powered by transparency.</p>
+                </div>
+                <div class="feature-grid stagger-in">
+                    <div class="card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05));">🧠</div>
+                        <h3>Machine Learning Model</h3>
+                        <p>Logistic Regression trained on the UCI Heart Disease dataset with hyperparameter tuning, achieving high accuracy on clinical data.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05));">📊</div>
+                        <h3>Explainable AI (SHAP)</h3>
+                        <p>Every prediction comes with a SHAP analysis showing exactly which health factors contributed most — making AI decisions transparent.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(255,107,107,0.05));">🔐</div>
+                        <h3>Secure & Personal</h3>
+                        <p>Create an account to track your predictions over time. All data is stored securely and only accessible to you.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="metrics-section">
+                <div class="section-header">
+                    <h2>Model <span class="gradient-text">Performance</span></h2>
+                    <p>Scikit-learn powered metrics — real performance on real clinical data</p>
+                </div>
+                <div class="metrics-grid stagger-in">
+                    <div class="metric-card">
+                        <div class="metric-value accuracy">{{ (metrics.accuracy * 100)|round(1) }}%</div>
+                        <div class="metric-label">Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value precision">{{ (metrics.precision * 100)|round(1) }}%</div>
+                        <div class="metric-label">Precision</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value recall">{{ (metrics.recall * 100)|round(1) }}%</div>
+                        <div class="metric-label">Recall</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value f1">{{ (metrics.f1_score * 100)|round(1) }}%</div>
+                        <div class="metric-label">F1 Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value auc">{{ (metrics.auc_roc * 100)|round(1) }}%</div>
+                        <div class="metric-label">AUC-ROC</div>
+                    </div>
+                </div>
+            </section>
+
+            <section style="text-align: center; padding: 4rem 0;">
+                <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem;">
+                    Ready to check your <span class="gradient-text">heart health</span>?
+                </h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.05rem;">
+                    {% if current_user.is_authenticated %}
+                    Enter your clinical parameters and get an AI-powered assessment in seconds.
+                    {% else %}
+                    Create a free account and get an AI-powered assessment in seconds.
+                    {% endif %}
+                </p>
+                {% if current_user.is_authenticated %}
+                <a href="/predict" class="btn btn-primary btn-lg">🫀 Get Your Prediction</a>
+                {% else %}
+                <a href="/signup" class="btn btn-primary btn-lg">🫀 Sign Up & Predict</a>
+                {% endif %}
+            </section>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p>⚕️ HeartGuard AI — For educational purposes only. Always consult a healthcare professional.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

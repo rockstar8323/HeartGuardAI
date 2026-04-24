@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance — HeartGuard AI</title>
+    <meta name="description" content="Detailed model performance metrics including accuracy, confusion matrix, and ROC curve.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫀</text></svg>">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🫀</span>
+                <span>HeartGuard AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                {% if current_user.is_authenticated %}
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/logout" class="nav-user">👤 {{ current_user.name }} · Logout</a></li>
+                {% else %}
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="performance-container">
+                <div class="form-header fade-in">
+                    <h1>Detailed Model <span class="gradient-text">Performance</span></h1>
+                    <p>Evaluation metrics for our Ensemble model trained on the UCI Heart Disease dataset.</p>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid stagger-in" style="margin-bottom: 3rem;">
+                    <div class="metric-card">
+                        <div class="metric-value accuracy">{{ (metrics.accuracy * 100)|round(1) }}%</div>
+                        <div class="metric-label">Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value precision">{{ (metrics.precision * 100)|round(1) }}%</div>
+                        <div class="metric-label">Precision</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value recall">{{ (metrics.recall * 100)|round(1) }}%</div>
+                        <div class="metric-label">Recall</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value f1">{{ (metrics.f1_score * 100)|round(1) }}%</div>
+                        <div class="metric-label">F1 Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value auc">{{ (metrics.auc_roc * 100)|round(1) }}%</div>
+                        <div class="metric-label">AUC-ROC</div>
+                    </div>
+                </div>
+
+                <!-- What do these metrics mean? -->
+                <div class="card fade-in" style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">📖 Understanding the Metrics</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-purple); margin-bottom: 0.25rem;">Accuracy</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">Percentage of total predictions that were correct.</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-blue); margin-bottom: 0.25rem;">Precision</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">Of predicted positives, how many actually had heart disease.</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-coral); margin-bottom: 0.25rem;">Recall</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">Of actual positives, how many we correctly identified.</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-green); margin-bottom: 0.25rem;">F1 Score</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">Harmonic mean of precision and recall — balanced measure.</p>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">AUC-ROC</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">Area under the ROC curve — overall discrimination ability.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confusion Matrix -->
+                <div class="chart-card fade-in fade-in-delay-1">
+                    <h3>🔢 Confusion Matrix</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                        Shows the breakdown of correct and incorrect predictions for each class.
+                    </p>
+                    <div class="confusion-matrix">
+                        <!-- Header row -->
+                        <div class="cm-header"></div>
+                        <div class="cm-header">Predicted<br>No Disease</div>
+                        <div class="cm-header">Predicted<br>Disease</div>
+                        <!-- Actual No Disease row -->
+                        <div class="cm-label">Actual<br>No Disease</div>
+                        <div class="cm-cell tn" title="True Negatives">{{ metrics.confusion_matrix[0][0] }}</div>
+                        <div class="cm-cell fp" title="False Positives">{{ metrics.confusion_matrix[0][1] }}</div>
+                        <!-- Actual Disease row -->
+                        <div class="cm-label">Actual<br>Disease</div>
+                        <div class="cm-cell fn" title="False Negatives">{{ metrics.confusion_matrix[1][0] }}</div>
+                        <div class="cm-cell tp" title="True Positives">{{ metrics.confusion_matrix[1][1] }}</div>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: rgba(59,130,246,0.3); border-radius: 4px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">True Negatives (TN)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: rgba(16,185,129,0.3); border-radius: 4px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">True Positives (TP)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: rgba(245,158,11,0.3); border-radius: 4px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">False Positives (FP)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 16px; height: 16px; background: rgba(239,68,68,0.3); border-radius: 4px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">False Negatives (FN)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROC Curve -->
+                <div class="chart-card fade-in fade-in-delay-2">
+                    <h3>📈 ROC Curve</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                        Receiver Operating Characteristic curve showing the trade-off between 
+                        True Positive Rate and False Positive Rate. AUC = {{ (metrics.auc_roc * 100)|round(1) }}%
+                    </p>
+                    <div class="roc-canvas-container">
+                        <canvas id="rocCanvas" width="500" height="450"></canvas>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <a href="/predict" class="btn btn-primary btn-lg">
+                        🔬 Make a Prediction
+                    </a>
+                    <a href="/" class="btn btn-secondary btn-lg">
+                        🏠 Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p>⚕️ HeartGuard AI — For educational purposes only. Always consult a healthcare professional.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Draw ROC Curve
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('rocCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            // ROC data from Flask
+            const fpr = {{ metrics.roc_curve.fpr | tojson }};
+            const tpr = {{ metrics.roc_curve.tpr | tojson }};
+            const auc = {{ metrics.auc_roc }};
+
+            const W = canvas.width;
+            const H = canvas.height;
+            const pad = { top: 30, right: 30, bottom: 60, left: 60 };
+            const plotW = W - pad.left - pad.right;
+            const plotH = H - pad.top - pad.bottom;
+
+            function x(v) { return pad.left + v * plotW; }
+            function y(v) { return pad.top + (1 - v) * plotH; }
+
+            // Background
+            ctx.fillStyle = '#0d0d14';
+            ctx.fillRect(0, 0, W, H);
+
+            // Grid lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const v = i / 10;
+                ctx.beginPath(); ctx.moveTo(x(v), y(0)); ctx.lineTo(x(v), y(1)); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x(0), y(v)); ctx.lineTo(x(1), y(v)); ctx.stroke();
+            }
+
+            // Axis labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 10; i += 2) {
+                const v = i / 10;
+                ctx.fillText(v.toFixed(1), x(v), y(0) + 20);
+                ctx.save();
+                ctx.translate(x(0) - 20, y(v));
+                ctx.fillText(v.toFixed(1), 0, 4);
+                ctx.restore();
+            }
+
+            // Axis titles
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('False Positive Rate', W / 2, H - 10);
+            ctx.save();
+            ctx.translate(15, H / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('True Positive Rate', 0, 0);
+            ctx.restore();
+
+            // Diagonal (random classifier)
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.setLineDash([6, 4]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x(0), y(0));
+            ctx.lineTo(x(1), y(1));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Fill under curve
+            const gradient = ctx.createLinearGradient(0, y(1), 0, y(0));
+            gradient.addColorStop(0, 'rgba(168, 85, 247, 0.15)');
+            gradient.addColorStop(1, 'rgba(168, 85, 247, 0.01)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(x(fpr[0]), y(tpr[0]));
+            for (let i = 1; i < fpr.length; i++) {
+                ctx.lineTo(x(fpr[i]), y(tpr[i]));
+            }
+            ctx.lineTo(x(fpr[fpr.length - 1]), y(0));
+            ctx.lineTo(x(fpr[0]), y(0));
+            ctx.closePath();
+            ctx.fill();
+
+            // ROC line
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x(fpr[0]), y(tpr[0]));
+            for (let i = 1; i < fpr.length; i++) {
+                ctx.lineTo(x(fpr[i]), y(tpr[i]));
+            }
+            ctx.stroke();
+
+            // Data points
+            ctx.fillStyle = '#a855f7';
+            for (let i = 0; i < fpr.length; i++) {
+                ctx.beginPath();
+                ctx.arc(x(fpr[i]), y(tpr[i]), 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // AUC Label
+            ctx.fillStyle = '#c4b5fd';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('AUC = ' + auc.toFixed(4), x(0.65), y(0.25));
+        });
+    </script>
+</body>
+</html>

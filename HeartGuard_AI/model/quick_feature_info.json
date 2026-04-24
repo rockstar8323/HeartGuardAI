@@ -1,0 +1,20 @@
+{
+  "names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "exang"
+  ],
+  "labels": {
+    "age": "Age (years)",
+    "sex": "Sex",
+    "cp": "Chest Pain Type",
+    "trestbps": "Blood Pressure (mmHg)",
+    "chol": "Cholesterol (mg/dl)",
+    "fbs": "High Blood Sugar (>120 mg/dl)",
+    "exang": "Chest Pain During Exercise"
+  }
+}

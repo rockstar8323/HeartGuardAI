@@ -1,0 +1,32 @@
+{
+  "names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "labels": {
+    "age": "Age (years)",
+    "sex": "Sex (1=Male, 0=Female)",
+    "cp": "Chest Pain Type (0-3)",
+    "trestbps": "Resting Blood Pressure (mm Hg)",
+    "chol": "Serum Cholesterol (mg/dl)",
+    "fbs": "Fasting Blood Sugar > 120 mg/dl",
+    "restecg": "Resting ECG Results (0-2)",
+    "thalach": "Max Heart Rate Achieved",
+    "exang": "Exercise Induced Angina",
+    "oldpeak": "ST Depression (Exercise vs Rest)",
+    "slope": "Slope of Peak Exercise ST",
+    "ca": "Number of Major Vessels (0-3)",
+    "thal": "Thalassemia (0=Normal, 1=Fixed, 2=Reversible, 3=Other)"
+  }
+}

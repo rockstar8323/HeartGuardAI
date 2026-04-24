@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict — HeartGuard AI</title>
+    <meta name="description" content="Choose Quick Check or Detailed Clinical mode for heart disease prediction.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫀</text></svg>">
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🫀</span>
+                <span>HeartGuard AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/logout" class="nav-user">👤 {{ current_user.name }} · Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="form-container">
+                <div class="form-header fade-in">
+                    <h1>Heart Disease <span class="gradient-text">Prediction</span></h1>
+                    <p>Choose a mode based on what information you have available</p>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-error fade-in">⚠️ {{ error }}</div>
+                {% endif %}
+
+                <!-- ─── Mode Selector ─── -->
+                <div class="mode-selector fade-in fade-in-delay-1">
+                    <button class="mode-tab active" data-mode="quick" id="quickTab" onclick="switchMode('quick')">
+                        🏃 Quick Check
+                    </button>
+                    <button class="mode-tab" data-mode="detailed" id="detailedTab" onclick="switchMode('detailed')">
+                        🏥 Detailed Clinical
+                    </button>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- QUICK CHECK MODE                               -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div id="quickMode" class="mode-content active">
+                    <div class="mode-badge">
+                        <span class="dot" style="background: var(--accent-green);"></span>
+                        No medical reports needed — uses information you already know (7 basic features)
+                    </div>
+
+                    <form method="POST" action="/predict/quick" id="quickForm">
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">👤</span> Basic Information
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="q_age">Age <span class="required">*</span></label>
+                                    <input type="number" id="q_age" name="age" class="form-control"
+                                        placeholder="e.g. 55" min="1" max="120" required>
+                                    <span class="form-hint">Your current age in years</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="q_sex">Sex <span class="required">*</span></label>
+                                    <select id="q_sex" name="sex" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Male</option>
+                                        <option value="0">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">💓</span> Symptoms You Experience
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="q_cp">Do you experience chest pain? <span
+                                            class="required">*</span></label>
+                                    <select id="q_cp" name="cp" class="form-control" required>
+                                        <option value="" disabled selected>Select type</option>
+                                        <option value="0">Typical chest pain during activity</option>
+                                        <option value="1">Unusual chest pain</option>
+                                        <option value="2">Pain not related to heart</option>
+                                        <option value="3">No chest pain</option>
+                                    </select>
+                                    <span class="form-hint">Type of chest discomfort you feel</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="q_exang">Chest pain during exercise? <span
+                                            class="required">*</span></label>
+                                    <select id="q_exang" name="exang" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Yes, I feel chest pain when exercising</option>
+                                        <option value="0">No chest pain during exercise</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">🩺</span> Basic Health Numbers
+                                <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">(from home
+                                    monitor or recent checkup)</span>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="q_trestbps">Blood Pressure <span class="required">*</span></label>
+                                    <input type="number" id="q_trestbps" name="trestbps" class="form-control"
+                                        placeholder="e.g. 120" min="50" max="250" required>
+                                    <span class="form-hint">Systolic BP in mmHg (top number)</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="q_chol">Cholesterol Level <span class="required">*</span></label>
+                                    <input type="number" id="q_chol" name="chol" class="form-control"
+                                        placeholder="e.g. 200" min="50" max="600" required>
+                                    <span class="form-hint">mg/dl — from a blood test report</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="q_fbs">Blood sugar above 120 mg/dl? <span
+                                            class="required">*</span></label>
+                                    <select id="q_fbs" name="fbs" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Yes (above 120 mg/dl)</option>
+                                        <option value="0">No (120 or below)</option>
+                                        <option value="0">I don't know</option>
+                                    </select>
+                                    <span class="form-hint">Fasting blood sugar level</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info fade-in" style="margin-top: 1rem;">
+                            ℹ️ Quick Check uses 7 basic features. For a more accurate result with all 13 clinical
+                            parameters, switch to <strong>Detailed Clinical</strong> mode.
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">🏃 Quick Predict</button>
+                            <button type="reset" class="btn btn-secondary btn-lg">🔄 Reset</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- DETAILED CLINICAL MODE                         -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div id="detailedMode" class="mode-content">
+                    <div class="mode-badge">
+                        <span class="dot" style="background: var(--accent-purple);"></span>
+                        Uses 13 clinical features for maximum accuracy (88.5%)
+                    </div>
+
+                    <!-- Sub-mode selector -->
+                    <div class="sub-mode-selector fade-in">
+                        <button class="sub-mode-tab active" onclick="switchSubMode('upload')" id="uploadSubTab">
+                            📄 Upload Report
+                        </button>
+                        <button class="sub-mode-tab" onclick="switchSubMode('manual')" id="manualSubTab">
+                            ✍️ Enter Manually
+                        </button>
+                    </div>
+
+                    <!-- Upload Sub-Mode -->
+                    <div id="uploadSubMode" class="sub-mode-content active">
+                        <div class="upload-zone" id="dropZone">
+                            <div class="upload-icon">📄</div>
+                            <h3>Drag & drop your medical report</h3>
+                            <p>Supports JPG, PNG, or PDF files</p>
+                            <input type="file" id="reportFile" accept=".jpg,.jpeg,.png,.pdf" style="display:none;"
+                                onchange="handleFileUpload(this)">
+                            <button type="button" class="btn btn-secondary"
+                                onclick="document.getElementById('reportFile').click()">
+                                📁 Browse Files
+                            </button>
+                        </div>
+
+                        <div id="uploadProgress" class="upload-progress" style="display:none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <p id="progressText">Extracting values from your report...</p>
+                        </div>
+
+                        <div id="extractedPreview" style="display:none;">
+                            <div class="alert alert-success fade-in">
+                                ✅ Found <span id="fieldsFound">0</span> of 13 values from your report.
+                                Please verify and fill in any missing fields below.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Sub-Mode (always visible for editing after upload too) -->
+                    <div id="manualSubMode" class="sub-mode-content">
+                    </div>
+
+                    <!-- Detailed Clinical Form (used by both upload and manual) -->
+                    <form method="POST" action="/predict/detailed" id="detailedForm">
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">👤</span> Demographics
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="d_age">Age <span class="required">*</span></label>
+                                    <input type="number" id="d_age" name="age" class="form-control"
+                                        placeholder="e.g. 55" min="1" max="120" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_sex">Sex <span class="required">*</span></label>
+                                    <select id="d_sex" name="sex" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Male</option>
+                                        <option value="0">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">🩺</span> Vitals & Symptoms
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="d_cp">Chest Pain Type <span class="required">*</span></label>
+                                    <select id="d_cp" name="cp" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="0">Typical Angina</option>
+                                        <option value="1">Atypical Angina</option>
+                                        <option value="2">Non-Anginal Pain</option>
+                                        <option value="3">Asymptomatic</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_trestbps">Resting Blood Pressure <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="d_trestbps" name="trestbps" class="form-control"
+                                        placeholder="e.g. 120" min="50" max="250" required>
+                                    <span class="form-hint">mm Hg</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_chol">Serum Cholesterol <span class="required">*</span></label>
+                                    <input type="number" id="d_chol" name="chol" class="form-control"
+                                        placeholder="e.g. 200" min="50" max="600" required>
+                                    <span class="form-hint">mg/dl</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_fbs">Fasting Blood Sugar &gt; 120 <span
+                                            class="required">*</span></label>
+                                    <select id="d_fbs" name="fbs" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Yes (&gt; 120 mg/dl)</option>
+                                        <option value="0">No (≤ 120 mg/dl)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">📈</span> ECG & Heart Rate
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="d_restecg">Resting ECG Results <span class="required">*</span></label>
+                                    <select id="d_restecg" name="restecg" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="0">Normal</option>
+                                        <option value="1">ST-T Wave Abnormality</option>
+                                        <option value="2">Left Ventricular Hypertrophy</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_thalach">Max Heart Rate Achieved <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="d_thalach" name="thalach" class="form-control"
+                                        placeholder="e.g. 150" min="50" max="250" required>
+                                    <span class="form-hint">BPM</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section fade-in">
+                            <div class="form-section-title">
+                                <span class="section-icon">🏃</span> Exercise Test Results
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="d_exang">Exercise Induced Angina <span class="required">*</span></label>
+                                    <select id="d_exang" name="exang" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_oldpeak">ST Depression (Oldpeak) <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="d_oldpeak" name="oldpeak" class="form-control"
+                                        placeholder="e.g. 1.5" min="0" max="10" step="0.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_slope">Slope of Peak Exercise ST <span
+                                            class="required">*</span></label>
+                                    <select id="d_slope" name="slope" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="0">Upsloping</option>
+                                        <option value="1">Flat</option>
+                                        <option value="2">Downsloping</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_ca">Major Vessels by Fluoroscopy <span
+                                            class="required">*</span></label>
+                                    <select id="d_ca" name="ca" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="d_thal">Thalassemia <span class="required">*</span></label>
+                                    <select id="d_thal" name="thal" class="form-control" required>
+                                        <option value="" disabled selected>Select</option>
+                                        <option value="0">Normal</option>
+                                        <option value="1">Fixed Defect</option>
+                                        <option value="2">Reversible Defect</option>
+                                        <option value="3">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">🔬 Analyze & Predict</button>
+                            <button type="reset" class="btn btn-secondary btn-lg">🔄 Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p>⚕️ HeartGuard AI — For educational purposes only. Always consult a healthcare professional.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        /* ─── Mode Switching ─── */
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+            document.getElementById(mode + 'Mode').classList.add('active');
+        }
+
+        function switchSubMode(sub) {
+            document.querySelectorAll('.sub-mode-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(sub + 'SubTab').classList.add('active');
+
+            if (sub === 'upload') {
+                document.getElementById('uploadSubMode').classList.add('active');
+                document.getElementById('manualSubMode').classList.remove('active');
+            } else {
+                document.getElementById('uploadSubMode').classList.remove('active');
+                document.getElementById('manualSubMode').classList.add('active');
+            }
+
+            // Always show the detailed form
+            document.getElementById('detailedForm').style.display = 'block';
+        }
+
+        /* ─── File Upload & OCR ─── */
+        const dropZone = document.getElementById('dropZone');
+
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        function handleFileUpload(input) {
+            if (input.files.length > 0) {
+                handleFile(input.files[0]);
+            }
+        }
+
+        async function handleFile(file) {
+            const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
+            if (!allowed.includes(file.type)) {
+                alert('Please upload a JPG, PNG, or PDF file.');
+                return;
+            }
+
+            // Show progress
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('dropZone').style.display = 'none';
+
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            progressFill.style.width = '30%';
+            progressText.textContent = 'Reading file...';
+
+            const formData = new FormData();
+            formData.append('report', file);
+
+            try {
+                progressFill.style.width = '60%';
+                progressText.textContent = 'Extracting medical values...';
+
+                const response = await fetch('/predict/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Done!';
+
+                setTimeout(() => {
+                    document.getElementById('uploadProgress').style.display = 'none';
+
+                    if (data.error) {
+                        document.getElementById('dropZone').style.display = 'flex';
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Show extracted preview
+                    document.getElementById('extractedPreview').style.display = 'block';
+                    document.getElementById('fieldsFound').textContent = data.fields_found;
+
+                    // Pre-fill form with extracted values
+                    const extracted = data.extracted;
+                    const fieldMap = {
+                        'age': 'd_age', 'sex': 'd_sex', 'cp': 'd_cp',
+                        'trestbps': 'd_trestbps', 'chol': 'd_chol', 'fbs': 'd_fbs',
+                        'restecg': 'd_restecg', 'thalach': 'd_thalach', 'exang': 'd_exang',
+                        'oldpeak': 'd_oldpeak', 'slope': 'd_slope', 'ca': 'd_ca', 'thal': 'd_thal'
+                    };
+
+                    for (const [key, value] of Object.entries(extracted)) {
+                        const el = document.getElementById(fieldMap[key]);
+                        if (el && value !== null) {
+                            el.value = value;
+                            el.style.borderColor = 'var(--accent-green)';
+                            el.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
+                        }
+                    }
+
+                    // Show the detailed form for user to review
+                    document.getElementById('detailedForm').style.display = 'block';
+                }, 500);
+
+            } catch (err) {
+                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('dropZone').style.display = 'flex';
+                alert('Upload failed. Please try again or enter values manually.');
+            }
+        }
+    </script>
+</body>
+
+</html>

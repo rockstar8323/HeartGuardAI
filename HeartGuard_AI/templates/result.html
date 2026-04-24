@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result — HeartGuard AI</title>
+    <meta name="description" content="Your heart disease prediction result with SHAP explainable AI analysis.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫀</text></svg>">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🫀</span>
+                <span>HeartGuard AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/predict">Predict</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/model-performance">Model</a></li>
+                <li><a href="/logout" class="nav-user">👤 {{ current_user.name }} · Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="result-container">
+                <!-- Result Header -->
+                <div class="result-header fade-in">
+                    <h1 style="font-size: 1.5rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Prediction Result
+                    </h1>
+
+                    {% if result.prediction == 1 %}
+                    <div class="result-badge high-risk">
+                        ⚠️ {{ result.prediction_label }}
+                    </div>
+                    {% else %}
+                    <div class="result-badge low-risk">
+                        ✅ {{ result.prediction_label }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Confidence Bar -->
+                    <div class="confidence-bar fade-in fade-in-delay-1">
+                        <div class="confidence-label">
+                            <span>Prediction Margin</span>
+                            <span>{{ result.confidence }}%</span>
+                        </div>
+                        <div class="confidence-track">
+                            <div class="confidence-fill {{ 'low-risk' if result.confidence > 40 else 'high-risk' }}"
+                                 style="width: 0%;" data-width="{{ result.confidence }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Probability Cards -->
+                    <div class="probability-cards fade-in fade-in-delay-2">
+                        <div class="prob-card disease">
+                            <div class="prob-value">{{ result.probability_disease }}%</div>
+                            <div class="prob-label">Heart Disease Probability</div>
+                        </div>
+                        <div class="prob-card no-disease">
+                            <div class="prob-value">{{ result.probability_no_disease }}%</div>
+                            <div class="prob-label">Healthy Probability</div>
+                        </div>
+                    </div>
+
+                    {% if result.mode_note %}
+                    <div class="mode-note fade-in fade-in-delay-3">
+                        ℹ️ <strong>{{ result.mode }}</strong>: {{ result.mode_note }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- SHAP Explanation Section -->
+                <div class="shap-section fade-in fade-in-delay-3">
+                    <div class="section-header" style="text-align: left;">
+                        <h2>🧠 Why This Prediction?</h2>
+                        <p class="subtitle">
+                            SHAP (SHapley Additive exPlanations) shows how each feature pushed the prediction 
+                            toward or away from heart disease risk. <strong style="color: #fca5a5;">Red</strong> bars
+                            increase risk, <strong style="color: #6ee7b7;">green</strong> bars decrease it.
+                        </p>
+                    </div>
+
+                    <!-- SHAP Plot -->
+                    {% if result.shap_plot %}
+                    <div class="shap-plot-container card">
+                        <img src="data:image/png;base64,{{ result.shap_plot }}" 
+                             alt="SHAP Feature Impact Analysis"
+                             style="max-width: 100%; height: auto;">
+                    </div>
+                    {% endif %}
+
+                    <!-- Feature Contributions Table -->
+                    <div class="card" style="overflow-x: auto;">
+                        <h3 style="margin-bottom: 1rem;">📋 Detailed Feature Contributions</h3>
+                        <table class="contributions-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Feature</th>
+                                    <th>Your Value</th>
+                                    <th>Impact</th>
+                                    <th>SHAP Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in result.contributions %}
+                                <tr>
+                                    <td style="color: var(--text-muted);">#{{ loop.index }}</td>
+                                    <td style="font-weight: 600;">{{ c.feature }}</td>
+                                    <td>
+                                        <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-accent);">
+                                            {{ c.value }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="impact-bar">
+                                            <div class="bar {{ 'positive' if c.shap_value > 0 else 'negative' }}"
+                                                 style="width: {{ (c.shap_value|abs * 100)|round|int }}px;"></div>
+                                            <span class="impact-tag {{ c.impact }}">
+                                                {{ '↑ Increases Risk' if c.impact == 'increases' else '↓ Decreases Risk' }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">
+                                        {{ "%.4f"|format(c.shap_value) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions" style="margin-top: 3rem;">
+                    <a href="/predict" class="btn btn-primary btn-lg">
+                        🔄 New Prediction
+                    </a>
+                    <a href="/" class="btn btn-secondary btn-lg">
+                        🏠 Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p>⚕️ HeartGuard AI — For educational purposes only. Always consult a healthcare professional.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Animate confidence bar on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const fill = document.querySelector('.confidence-fill');
+                if (fill) {
+                    fill.style.width = fill.dataset.width;
+                }
+            }, 300);
+        });
+    </script>
+</body>
+</html>
