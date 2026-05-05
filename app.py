@@ -184,7 +184,7 @@ def predict_quick():
         X_input = np.array(input_values).reshape(1, -1)
         X_scaled = quick_scaler.transform(X_input)
 
-        THRESHOLD = 0.35
+        THRESHOLD = quick_metrics["best_threshold"]
         probability = quick_model.predict_proba(X_scaled)[0]
         prediction = 1 if probability[1] >= THRESHOLD else 0
         confidence = abs(probability[0] - probability[1]) * 100
@@ -253,7 +253,7 @@ def predict_detailed():
         X_input = np.array(input_values).reshape(1, -1)
         X_scaled = scaler.transform(X_input)
 
-        THRESHOLD = 0.35
+        THRESHOLD = metrics["best_threshold"]
         probability = model.predict_proba(X_scaled)[0]
         prediction = 1 if probability[1] >= THRESHOLD else 0
         confidence = abs(probability[0] - probability[1]) * 100

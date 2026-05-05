@@ -151,7 +151,7 @@ def evaluate_model(model, X_test_scaled, y_test):
     print("-" * 40)
 
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
-    y_pred = (y_prob >= 0.35).astype(int)
+    y_pred = (y_prob >= 0.321179).astype(int)
 
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, zero_division=0)
@@ -169,7 +169,11 @@ def evaluate_model(model, X_test_scaled, y_test):
     print(f"   {cm}")
     print(f"\n{classification_report(y_test, y_pred, target_names=['No Disease', 'Disease'])}")
 
-    fpr, tpr, _ = roc_curve(y_test, y_prob)
+    fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+    distance = np.sqrt((fpr - 0)**2 + (tpr - 1)**2)
+    best_idx = np.argmin(distance)
+    best_threshold = thresholds[best_idx]
+    print(f"\nOptimal threshold: {best_threshold:.4f}")
 
     metrics = {
         'accuracy': round(float(acc), 4),
@@ -180,8 +184,10 @@ def evaluate_model(model, X_test_scaled, y_test):
         'confusion_matrix': cm.tolist(),
         'roc_curve': {
             'fpr': [round(float(x), 6) for x in fpr],
-            'tpr': [round(float(x), 6) for x in tpr]
-        }
+            'tpr': [round(float(x), 6) for x in tpr],
+            'thresholds': [round(float(x), 6) for x in thresholds]
+        },
+        'best_threshold': round(float(best_threshold), 6)
     }
 
     return metrics

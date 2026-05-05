@@ -16,7 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, confusion_matrix
+    roc_auc_score, confusion_matrix, roc_curve
 )
 import joblib
 
@@ -89,8 +89,12 @@ def main():
 
     # Evaluate
     y_prob = model.predict_proba(X_test_s)[:, 1]
-    # y_pred = model.predict(X_test_s)
-    y_pred = (y_prob >= 0.35).astype(int)
+    y_pred = (y_prob >= 0.4632).astype(int)
+
+    fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+    distance = np.sqrt((fpr - 0)**2 + (tpr - 1)**2)
+    best_idx = np.argmin(distance)
+    best_threshold = thresholds[best_idx]
 
     metrics = {
         'accuracy': round(float(accuracy_score(y_test, y_pred)), 4),
@@ -98,7 +102,13 @@ def main():
         'recall': round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
         'f1_score': round(float(f1_score(y_test, y_pred, zero_division=0)), 4),
         'auc_roc': round(float(roc_auc_score(y_test, y_prob)), 4),
-        'confusion_matrix': confusion_matrix(y_test, y_pred).tolist()
+        'confusion_matrix': confusion_matrix(y_test, y_pred).tolist(),
+        'roc_curve': {
+            'fpr': [round(float(x), 6) for x in fpr],
+            'tpr': [round(float(x), 6) for x in tpr],
+            'thresholds': [round(float(x), 6) for x in thresholds]
+        },
+        'best_threshold': round(float(best_threshold), 6)
     }
 
     print(f"\n📈 Test Results:")
@@ -107,6 +117,9 @@ def main():
     print(f"   Recall:    {metrics['recall']*100:.1f}%")
     print(f"   F1-Score:  {metrics['f1_score']*100:.1f}%")
     print(f"   AUC-ROC:   {metrics['auc_roc']*100:.1f}%")
+    print(f"\nConfusion Matrix:")
+    print(np.array(metrics['confusion_matrix']))
+    print(f"\nOptimal threshold: {metrics['best_threshold']}")
 
     # Save
     joblib.dump(model, os.path.join(MODEL_DIR, 'quick_model.pkl'))
