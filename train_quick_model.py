@@ -19,6 +19,7 @@ from sklearn.metrics import (
     roc_auc_score, confusion_matrix, roc_curve
 )
 import joblib
+import shap
 
 warnings.filterwarnings('ignore')
 
@@ -53,11 +54,6 @@ def main():
     print(f"\n📊 Dataset: {df.shape[0]} samples")
 
     X = df[QUICK_FEATURES].values
-
-    # ── Target flip ──────────────────────────────────────────────────────
-    # This Kaggle version of the UCI Cleveland dataset uses:
-    #   1 = No Disease (healthy),  0 = Disease (sick)
-    # Flip so the model learns: 1 = Disease, 0 = No Disease
     y = 1 - df['target'].values
 
     print("\n🔧 Splitting data (fixed 80/20)...")
@@ -89,12 +85,13 @@ def main():
 
     # Evaluate
     y_prob = model.predict_proba(X_test_s)[:, 1]
-    y_pred = (y_prob >= 0.4632).astype(int)
-
     fpr, tpr, thresholds = roc_curve(y_test, y_prob)
     distance = np.sqrt((fpr - 0)**2 + (tpr - 1)**2)
     best_idx = np.argmin(distance)
     best_threshold = thresholds[best_idx]
+    print(f"\n   Optimal threshold: {best_threshold:.4f}")
+    y_pred = (y_prob >= best_threshold).astype(int)
+
 
     metrics = {
         'accuracy': round(float(accuracy_score(y_test, y_pred)), 4),
@@ -119,7 +116,6 @@ def main():
     print(f"   AUC-ROC:   {metrics['auc_roc']*100:.1f}%")
     print(f"\nConfusion Matrix:")
     print(np.array(metrics['confusion_matrix']))
-    print(f"\nOptimal threshold: {metrics['best_threshold']}")
 
     # Save
     joblib.dump(model, os.path.join(MODEL_DIR, 'quick_model.pkl'))
@@ -137,7 +133,6 @@ def main():
         json.dump(quick_info, f, indent=2)
 
     # Save SHAP background
-    import shap
     shap_bg = X_train_s[:80].tolist()
     explainer = shap.LinearExplainer(lr_model, X_train_s[:80])
     shap_data = {

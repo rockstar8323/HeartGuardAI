@@ -90,10 +90,11 @@ with open(os.path.join(MODEL_DIR, 'quick_feature_info.json'), 'r') as f:
 with open(os.path.join(MODEL_DIR, 'quick_shap_data.json'), 'r') as f:
     quick_shap_data = json.load(f)
 
-quick_bg = np.array(quick_shap_data['background'])
-quick_explainer = shap.LinearExplainer(quick_lr, quick_bg)
 QUICK_FEATURES = quick_info['names']
 QUICK_LABELS = quick_info['labels']
+
+quick_bg = np.array(quick_shap_data['background'])
+quick_explainer = shap.LinearExplainer(quick_lr, quick_bg)
 
 print(f"   [OK] Quick model - Accuracy: {quick_metrics['accuracy']*100:.1f}%")
 print("[OK] All models loaded!")
@@ -187,7 +188,7 @@ def predict_quick():
         THRESHOLD = quick_metrics["best_threshold"]
         probability = quick_model.predict_proba(X_scaled)[0]
         prediction = 1 if probability[1] >= THRESHOLD else 0
-        confidence = abs(probability[0] - probability[1]) * 100
+        pred_margin = abs(probability[0] - probability[1]) * 100
 
         # SHAP values — positive = increases disease risk, negative = decreases
         shap_vals = quick_explainer.shap_values(X_scaled)
@@ -209,7 +210,7 @@ def predict_quick():
         result = {
             'prediction': int(prediction),
             'prediction_label': 'High Risk of Heart Disease' if prediction == 1 else 'Low Risk of Heart Disease',
-            'confidence': round(confidence, 1),
+            'pred_margin': round(pred_margin, 1),
             'probability_disease': round(float(probability[1]) * 100, 1),
             'probability_no_disease': round(float(probability[0]) * 100, 1),
             'contributions': contributions,
@@ -226,7 +227,7 @@ def predict_quick():
             trestbps=input_values[3], chol=input_values[4], fbs=input_values[5],
             exang=input_values[6],
             prediction=int(prediction),
-            confidence=round(confidence, 1),
+            confidence=round(pred_margin, 1),
             probability_disease=round(float(probability[1]) * 100, 1),
             probability_no_disease=round(float(probability[0]) * 100, 1)
         )
@@ -256,16 +257,11 @@ def predict_detailed():
         THRESHOLD = metrics["best_threshold"]
         probability = model.predict_proba(X_scaled)[0]
         prediction = 1 if probability[1] >= THRESHOLD else 0
-        confidence = abs(probability[0] - probability[1]) * 100
+        pred_margin = abs(probability[0] - probability[1]) * 100
 
         # ── SHAP: weighted combination of per-estimator explanations ─────
-        # LinearExplainer → shape (1, n); pick row 0 → (n,)
-        lr_shap = lr_explainer.shap_values(X_scaled)[0]
 
-        # TreeExplainer output varies by SHAP version / estimator:
-        #   list  [shape(1,n), shape(1,n)] — older SHAP, per-class list
-        #   ndarray shape (1, n, 2)        — newer SHAP, last axis = class
-        #   ndarray shape (1, n)           — rare single-output fallback
+        # Explainer output varies by SHAP version / estimator:
         # Always extract a flat (n,) array for class-1 (disease).
         def _class1_shap(raw):
             if isinstance(raw, list):
@@ -275,6 +271,7 @@ def predict_detailed():
                 return raw[0, :, 1]     # → (n,), class-1
             return raw[0]               # (1, n) → (n,)
 
+        lr_shap = _class1_shap(lr_explainer.shap_values(X_scaled))
         rf_shap = _class1_shap(rf_explainer.shap_values(X_scaled))
         gb_shap = _class1_shap(gb_explainer.shap_values(X_scaled))
 
@@ -301,7 +298,7 @@ def predict_detailed():
         result = {
             'prediction': int(prediction),
             'prediction_label': 'High Risk of Heart Disease' if prediction == 1 else 'Low Risk of Heart Disease',
-            'confidence': round(confidence, 1),
+            'pred_margin': round(pred_margin, 1),
             'probability_disease': round(float(probability[1]) * 100, 1),
             'probability_no_disease': round(float(probability[0]) * 100, 1),
             'contributions': contributions,
@@ -318,7 +315,7 @@ def predict_detailed():
             oldpeak=input_values[9], slope=input_values[10], ca=input_values[11],
             thal=input_values[12],
             prediction=int(prediction),
-            confidence=round(confidence, 1),
+            confidence=round(pred_margin, 1),
             probability_disease=round(float(probability[1]) * 100, 1),
             probability_no_disease=round(float(probability[0]) * 100, 1)
         )

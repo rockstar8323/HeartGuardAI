@@ -74,16 +74,7 @@ def load_and_preprocess():
     print(f"   Target distribution: {df['target'].value_counts().to_dict()}")
 
     X = df[FEATURE_NAMES].values
-
-    # ── Target flip ──────────────────────────────────────────────────────
-    # This Kaggle version of the UCI Cleveland dataset has the target
-    # encoded as:  1 = No Disease (healthy),  0 = Disease (sick)
-    # That is the OPPOSITE of the medical convention used everywhere
-    # else in the codebase ("prediction==1 → High Risk").
-    # Flip it here so the model learns: 1 = Disease, 0 = No Disease.
     y = 1 - df['target'].values
-
-    #print(f"   Flipped target distribution (1=Disease): {dict(zip(*np.unique(y, return_counts=True)))}")
 
     return X, y, df
 
@@ -151,7 +142,12 @@ def evaluate_model(model, X_test_scaled, y_test):
     print("-" * 40)
 
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
-    y_pred = (y_prob >= 0.321179).astype(int)
+    fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+    distance = np.sqrt((fpr - 0)**2 + (tpr - 1)**2)
+    best_idx = np.argmin(distance)
+    best_threshold = thresholds[best_idx]
+    print(f"\n   Optimal threshold: {best_threshold:.4f}\n")
+    y_pred = (y_prob >= best_threshold).astype(int)
 
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, zero_division=0)
@@ -167,13 +163,7 @@ def evaluate_model(model, X_test_scaled, y_test):
     print(f"   AUC-ROC:   {auc:.4f}")
     print(f"\n   Confusion Matrix:")
     print(f"   {cm}")
-    print(f"\n{classification_report(y_test, y_pred, target_names=['No Disease', 'Disease'])}")
 
-    fpr, tpr, thresholds = roc_curve(y_test, y_prob)
-    distance = np.sqrt((fpr - 0)**2 + (tpr - 1)**2)
-    best_idx = np.argmin(distance)
-    best_threshold = thresholds[best_idx]
-    print(f"\nOptimal threshold: {best_threshold:.4f}")
 
     metrics = {
         'accuracy': round(float(acc), 4),
@@ -194,21 +184,6 @@ def evaluate_model(model, X_test_scaled, y_test):
 
 
 def generate_shap_data(model, scaler, X_train_scaled):
-    """Build per-estimator SHAP explainers (LinearExplainer for LR,
-    TreeExplainer for RF and GB) and persist everything the web app
-    needs to reconstruct them at startup without re-processing training
-    data.
-
-    Sub-models are saved as separate .pkl files so the Flask app can
-    instantiate each explainer independently.  The LR background (a
-    compact training-data sample) is stored in shap_data.json because
-    LinearExplainer needs it; TreeExplainer uses the model's internal
-    tree structure and requires no background dataset.
-
-    Weights mirror the VotingClassifier: LR=1, RF=1.5, GB=1.5
-    (total=4.0).  Combined expected value is the weighted mean of each
-    individual explainer's expected value for class-1 (disease).
-    """
     print("\n🧠 Generating SHAP explainer data (LinearExplainer + TreeExplainer × 2)...")
 
     # ── Extract the three fitted estimators from the ensemble ─────────
@@ -266,12 +241,7 @@ def generate_shap_data(model, scaler, X_train_scaled):
 
 
 def save_artifacts(model, scaler, metrics, shap_data):
-    """Save model, scaler, metrics, SHAP data, and feature info.
-
-    Note: the three SHAP sub-model .pkl files (shap_lr_model.pkl,
-    shap_rf_model.pkl, shap_gb_model.pkl) are written by
-    generate_shap_data() above.
-    """
+    """Save model, scaler, metrics, SHAP data, and feature info."""
     print("\n💾 Saving artifacts...")
 
     joblib.dump(model, os.path.join(MODEL_DIR, 'heart_model.pkl'))

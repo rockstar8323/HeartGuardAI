@@ -47,15 +47,15 @@
                     </div>
                     {% endif %}
 
-                    <!-- Confidence Bar -->
+                    <!--Prediction Margin Bar -->
                     <div class="confidence-bar fade-in fade-in-delay-1">
                         <div class="confidence-label">
                             <span>Prediction Margin</span>
-                            <span>{{ result.confidence }}%</span>
+                            <span>{{ result.pred_margin }}%</span>
                         </div>
                         <div class="confidence-track">
-                            <div class="confidence-fill {{ 'low-risk' if result.confidence > 40 else 'high-risk' }}"
-                                 style="width: 0%;" data-width="{{ result.confidence }}%"></div>
+                            <div class="confidence-fill {{ 'low-risk' if result.pred_margin > 40 else 'high-risk' }}"
+                                 style="width: 0%;" data-width="{{ result.pred_margin }}%"></div>
                         </div>
                     </div>
 
